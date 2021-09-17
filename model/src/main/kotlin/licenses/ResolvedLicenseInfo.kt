@@ -316,10 +316,17 @@ data class ResolvedOriginalExpression(
  * [detected][LicenseSource.DETECTED] and all [locations][ResolvedLicense.locations] have
  * [matching path excludes][ResolvedLicenseLocation.matchingPathExcludes]. Copyrights are removed if all
  * [findings][ResolvedCopyright.findings] have
- * [matching path excludes][ResolvedCopyrightFinding.matchingPathExcludes].
+ * [matching path excludes][ResolvedCopyrightFinding.matchingPathExcludes]. Original expressions are removed if all
+ * corresponding license findings have [matching path excludes][ResolvedLicenseLocation.matchingPathExcludes].
  */
 fun List<ResolvedLicense>.filterExcluded() =
-    filter { resolvedLicense ->
+    map { resolvedLicense ->
+        resolvedLicense.copy(
+            originalExpressions = resolvedLicense.originalExpressions.filterTo(mutableSetOf()) {
+                !it.isDetectedExcluded
+            }
+        )
+    }.filter { resolvedLicense ->
         resolvedLicense.sources != setOf(LicenseSource.DETECTED) ||
                 resolvedLicense.locations.any { it.matchingPathExcludes.isEmpty() }
     }.map { it.filterExcludedCopyrights() }
